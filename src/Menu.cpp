@@ -1,0 +1,62 @@
+#include "Menu.h"
+#include "SpriteUtils.h"
+
+Menu::Menu(sf::Vector2f center, unsigned int buttonWidth, float gap)
+	: m_center(center), m_buttonWidth(buttonWidth), m_gap(gap), m_nextY(center.y)
+{
+}
+
+void Menu::addButton(const sf::Texture& texture, Button::Func func)
+{
+	auto [rect, scale] = nextButtonRect(texture, m_buttonWidth);
+	m_buttons.emplace_back(rect, texture, func, scale);
+}
+
+void Menu::addButton(const sf::Texture& texture, Button::Func func, unsigned int width)
+{
+	auto [rect, scale] = nextButtonRect(texture, width);
+	m_buttons.emplace_back(rect, texture, func, scale);
+}
+
+void Menu::addButton(const sf::Texture& texture, Button::Func func, const sf::Font& font, const std::string& label)
+{
+	auto [rect, scale] = nextButtonRect(texture, m_buttonWidth);
+	m_buttons.emplace_back(rect, texture, func, font, label, scale);
+}
+
+// Computes the next stacked button's rect/scale and advances m_nextY -
+// shared layout math for all three addButton overloads.
+std::pair<sf::IntRect, sf::Vector2f> Menu::nextButtonRect(const sf::Texture& texture, unsigned int width)
+{
+	auto textureSize = texture.getSize();
+	float scale = SpriteUtils::widthScale(textureSize, width);
+	float scaledHeight = static_cast<float>(textureSize.y) * scale;
+
+	sf::Vector2i size(static_cast<int>(width), static_cast<int>(scaledHeight));
+	sf::Vector2i position(static_cast<int>(m_center.x - width / 2.f), static_cast<int>(m_nextY));
+
+	m_nextY += scaledHeight + m_gap;
+
+	return { sf::IntRect(position, size), sf::Vector2f{ scale, scale } };
+}
+
+void Menu::handleEvent(const sf::Event& event)
+{
+	for (auto& button : m_buttons)
+	{
+		button.handleEvent(event);
+	}
+	event.visit([this](const auto& e) { handle(e); });
+}
+
+void Menu::draw(sf::RenderWindow& window) const
+{
+	for (auto& button: m_buttons)
+	{
+		button.draw(window);
+	}
+}
+
+void Menu::handle(const sf::Event::KeyPressed& event)
+{
+}
